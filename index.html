@@ -19,12 +19,22 @@
 
     <!-- UI Overlay Layer -->
     <div id="ui-layer">
+        <!-- Warning Banner -->
+        <div id="data-warning">
+            ⚠ CAUTION: DATA SAVED LOCALLY (BROWSER ONLY). CLEARING CACHE WILL RESET PROGRESS.
+        </div>
+
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
             <h1 class="neon-text">NEON TYPER</h1>
             <p class="subtitle">System Ready...</p>
-            <button id="start-btn" class="cyber-btn">INITIALIZE</button>
-            <button id="levels-btn" class="cyber-btn">SELECT LEVEL</button>
+            <div id="difficulty-selection">
+                <button class="cyber-btn difficulty-btn" data-level="1">LV 1-5 (Beginner)</button>
+                <button class="cyber-btn difficulty-btn" data-level="6">LV 6-10 (Rookie)</button>
+                <button class="cyber-btn difficulty-btn" data-level="11">LV 11-20 (Inter)</button>
+                <button class="cyber-btn difficulty-btn" data-level="21">LV 21-30 (Adv)</button>
+                <button class="cyber-btn difficulty-btn" data-level="31">LV 31+ (Master)</button>
+            </div>
         </div>
 
         <!-- Level Select Screen -->
@@ -47,15 +57,19 @@
                 <span id="level-display" class="value">01</span>
             </div>
             <div class="hud-item">
+                <span class="label">RANK</span>
+                <span id="tier-display" class="value">Beginner</span>
+            </div>
+            <div class="hud-item">
                 <span class="label">WPM</span>
                 <span id="wpm-display" class="value">0</span>
             </div>
             <div class="hud-item">
                 <span class="label">INTEGRITY</span>
                 <div id="lives-display">
-                    <span class="heart active">â¤</span>
-                    <span class="heart active">â¤</span>
-                    <span class="heart active">â¤</span>
+                    <span class="live-dot active"></span>
+                    <span class="live-dot active"></span>
+                    <span class="live-dot active"></span>
                 </div>
             </div>
         </div>

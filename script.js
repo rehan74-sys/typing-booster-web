@@ -32,10 +32,47 @@ const wpmEl = document.getElementById('wpm-display');
 const livesEl = document.getElementById('lives-display');
 
 // Dictionary
-const WORD_LIST_EASY = ["code", "data", "byte", "node", "loop", "link", "text", "type", "key", "fan", "cpu", "ram", "git", "web", "app", "api", "css", "html", "java", "ruby"];
-const WORD_LIST_MEDIUM = ["system", "server", "python", "script", "hacker", "socket", "packet", "router", "switch", "client", "pixel", "vector", "matrix", "binary", "stream", "buffer", "memory", "kernel"];
-const WORD_LIST_HARD = ["algorithm", "firewall", "encryption", "bandwidth", "processor", "interface", "protocol", "framework", "component", "middleware", "repository", "function", "variable", "constant"];
-const WORD_LIST_EXPERT = ["polymorphism", "encapsulation", "inheritance", "asynchronous", "concurrency", "distributed", "blockchain", "cybersecurity", "neuralnetwork", "microservice", "virtualization"];
+// Dictionary - 5 Tiers (Typing Master Style)
+// Dictionary - Specific Level Sets (50 Unique Words each)
+const WORDS_1_5 = [
+    "cat", "dog", "sun", "run", "sky", "red", "box", "fox", "cup", "hat",
+    "bat", "rat", "pen", "ink", "map", "net", "top", "zip", "bed", "car",
+    "bus", "log", "pig", "cow", "ant", "bee", "fly", "owl", "yak", "joy",
+    "sad", "mad", "big", "hot", "ice", "gem", "key", "lid", "mix", "nut",
+    "oil", "pan", "rug", "sea", "tea", "toy", "van", "wax", "yes", "zoo"
+]; // 3-4 letters
+
+const WORDS_6_10 = [
+    "apple", "bread", "chair", "dance", "eagle", "fruit", "glass", "house", "image", "juice",
+    "kite", "lemon", "money", "night", "ocean", "piano", "queen", "river", "snake", "tiger",
+    "uncle", "video", "water", "zebra", "alarm", "beach", "cloud", "dream", "earth", "flame",
+    "grape", "heart", "igloo", "jelly", "knife", "light", "mouse", "nurse", "onion", "party",
+    "quiet", "robot", "sheep", "table", "unity", "voice", "watch", "xenon", "yacht", "zonal"
+]; // 4-5 letters (mostly 5)
+
+const WORDS_11_20 = [
+    "action", "basket", "candle", "danger", "engine", "family", "garden", "harbor", "island", "jungle",
+    "king", "ladder", "magnet", "number", "orange", "planet", "quest", "rocket", "screen", "target",
+    "unique", "valley", "window", "yellow", "zipper", "animal", "button", "camera", "doctor", "energy",
+    "forest", "garage", "hammer", "insect", "jacket", "kettle", "laptop", "market", "napkin", "office",
+    "pencil", "rabbit", "school", "ticket", "umbrella", "velvet", "winter", "yogurt", "zombie", "zero"
+]; // Max 7 letters
+
+const WORDS_21_30 = [
+    "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet",
+    "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango",
+    "Uniform", "Victor", "Whiskey", "Xray", "Yankee", "Zulu", "Apple", "Banana", "Cherry", "Date",
+    "Elder", "Fig", "Grape", "Hazel", "Iris", "Jasmine", "Kale", "Lily", "Mint", "Neem",
+    "Oak", "Pine", "Quill", "Rose", "Sage", "Tulip", "Urn", "Vine", "Willow", "Yew"
+]; // Mixed Case
+
+const WORDS_31_50 = [
+    "Accomplish", "Background", "Challenge", "Development", "Environment", "Generation", "Hemisphere", "Importance", "Journalist", "Knowledge",
+    "Leadership", "Management", "Navigation", "Observation", "Performance", "Question", "Relationship", "Significant", "Technology", "Understanding",
+    "Vocabulary", "Wonderland", "Xylophone", "Yesterday", "Zoology", "Architecture", "Biology", "Chemistry", "Democracy", "Economics",
+    "Foundation", "Geography", "History", "Identity", "Justice", "Literature", "Mathematics", "Narrative", "Philosophy", "Quantity",
+    "Reality", "Sociology", "Tradition", "Universe", "Victory", "Wisdom", "Xenophobia", "Yearning", "Zealous", "Algorithm"
+]; // Long & Complex
 
 // Initialization
 function init() {
@@ -44,11 +81,15 @@ function init() {
 }
 
 function setupEventListeners() {
-    document.getElementById('start-btn').addEventListener('click', () => {
-        // Continue from max unlocked or level 1
-        startGame(gameState.maxUnlockedLevel);
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const startLevel = parseInt(e.target.dataset.level);
+            // Optionally check if unlocked? For now allow "Free Play" style or check max
+            // if (startLevel <= gameState.maxUnlockedLevel) ... let's allow selection effectively
+            startGame(startLevel);
+        });
     });
-    document.getElementById('levels-btn').addEventListener('click', showLevelSelect);
+    // document.getElementById('levels-btn').addEventListener('click', showLevelSelect); -- Level Grid can be an alternate way
     document.getElementById('back-home-btn').addEventListener('click', showStartScreen);
     document.getElementById('restart-btn').addEventListener('click', () => startGame(gameState.level));
     document.getElementById('home-btn').addEventListener('click', showStartScreen);
@@ -95,31 +136,39 @@ function hideAllScreens() {
 
 // Level Configuration
 function getLevelConfig(level) {
-    // Difficulty Formula
-    let speedMultiplier = 1 + (level * 0.1);
-    let spawnRate = Math.max(800, SPAWN_RATE_BASE - (level * 40));
+    // Difficulty Formula: Aggressive Linear Increase
+    // Speed: Starts at 1.0, adds 0.12 per level
+    let speedMultiplier = 1 + (level * 0.12);
 
-    let wordPool = WORD_LIST_EASY;
-    if (level > 10) wordPool = [...WORD_LIST_EASY, ...WORD_LIST_MEDIUM];
-    if (level > 20) wordPool = [...WORD_LIST_EASY, ...WORD_LIST_MEDIUM, ...WORD_LIST_HARD];
-    if (level > 35) wordPool = [...WORD_LIST_MEDIUM, ...WORD_LIST_HARD, ...WORD_LIST_EXPERT];
+    // Spawn Rate: Starts at 2500ms, reduces by 45ms per level
+    let spawnRate = Math.max(500, SPAWN_RATE_BASE - (level * 45));
 
-    // Boss Level Logic (Every 3rd level)
+    let wordPool = WORDS_1_5;
+    let tierName = "Beginner (Lv 1-5)";
+
+    if (level > 5) { wordPool = WORDS_6_10; tierName = "Rookie (Lv 6-10)"; }
+    if (level > 10) { wordPool = WORDS_11_20; tierName = "Intermediate (Lv 11-20)"; }
+    if (level > 20) { wordPool = WORDS_21_30; tierName = "Advanced (Lv 21-30)"; } // Contains Caps
+    if (level > 30) { wordPool = WORDS_31_50; tierName = "Master (Lv 31-50)"; }
+
+    // Boss Level Logic (Every 5th level now for pacing?) - Stick to 3 as per original? User didn't change this.
+    // Keeping "Every 3rd level" as "Test/Boss"
     const isBoss = (level % 3 === 0);
     if (isBoss) {
-        speedMultiplier *= 1.2; // 20% faster on boss levels
-        spawnRate *= 0.8; // More frequent spawns
+        speedMultiplier *= 1.15; // Speed boost for boss
+        spawnRate *= 0.9;
     }
 
-    // Target Score: Level 1 = 100, Level 2 = 200, etc.
-    const scoreToPass = level * 100;
+    // Target Score: Level 1 = 300 pts (30 words), Level 50 = ~1500 pts
+    const scoreToPass = 300 + (level * 25);
 
     return {
         speed: GRAVITY_BASE * speedMultiplier,
         spawnRate: spawnRate,
         wordPool: wordPool,
         scoreToPass: scoreToPass,
-        isBoss: isBoss
+        isBoss: isBoss,
+        tierName: tierName
     };
 }
 
@@ -244,14 +293,23 @@ function removeWord(index) {
 function handleInput(e) {
     if (!gameState.isPlaying) return;
 
-    const key = e.key.toLowerCase();
+    let inputKey = e.key;
+    // Levels 1-20: Case insensitive
+    if (gameState.level <= 20) {
+        inputKey = inputKey.toLowerCase();
+    }
+    // Levels 21+: Strict case (inputKey remains as typed)
 
+    // Check Active Word First
     let activeWord = gameState.words.find(w => w.typedIndex > 0);
 
     if (activeWord) {
-        if (activeWord.text[activeWord.typedIndex] === key) {
+        let expectedChar = activeWord.text[activeWord.typedIndex];
+        if (gameState.level <= 20) expectedChar = expectedChar.toLowerCase();
+
+        if (expectedChar === inputKey) {
             activeWord.typedIndex++;
-            gameState.charactersTyped++; // Track char
+            gameState.charactersTyped++;
             highlightWord(activeWord);
 
             if (activeWord.typedIndex === activeWord.text.length) {
@@ -260,12 +318,18 @@ function handleInput(e) {
             }
         }
     } else {
-        const candidates = gameState.words.filter(w => w.text.startsWith(key));
+        // Find Candidate
+        const candidates = gameState.words.filter(w => {
+            let startChar = w.text[0];
+            if (gameState.level <= 20) startChar = startChar.toLowerCase();
+            return startChar === inputKey;
+        });
+
         if (candidates.length > 0) {
-            candidates.sort((a, b) => b.y - a.y); // Lowest first
+            candidates.sort((a, b) => b.y - a.y);
             const target = candidates[0];
             target.typedIndex = 1;
-            gameState.charactersTyped++; // Track char
+            gameState.charactersTyped++;
             highlightWord(target);
             if (target.typedIndex === target.text.length) {
                 finishWord(target);
@@ -323,16 +387,29 @@ function updateHUD() {
     scoreEl.innerText = `${gameState.score} / ${target}`;
 
     levelEl.innerText = gameState.level.toString().padStart(2, '0');
+    // Update Tier
+    const tierEl = document.getElementById('tier-display');
+    if (tierEl && gameState.currentConfig) tierEl.innerText = gameState.currentConfig.tierName;
 
     // Ensure WPM is updated in HUD 
     if (wpmEl) wpmEl.innerText = gameState.wpm;
 
-    const hearts = livesEl.querySelectorAll('.heart');
-    hearts.forEach((heart, i) => {
+    // Update Lives (Dots)
+    // We expect 3 dots.
+    // Lives = 3 -> All Green (active)
+    // Lives = 2 -> 2 Green, 1 Red (lost)
+    // Lives = 1 -> 1 Green, 2 Red
+    const dots = livesEl.querySelectorAll('.live-dot');
+    dots.forEach((dot, i) => {
+        // i goes 0, 1, 2. Lives goes 3, 2, 1, 0.
+        // If lives = 3: i < 3 (0,1,2) -> active.
+        // If lives = 2: i < 2 (0,1) -> active. i=2 -> lost.
         if (i < gameState.lives) {
-            heart.classList.add('active');
+            dot.classList.add('active');
+            dot.classList.remove('lost');
         } else {
-            heart.classList.remove('active');
+            dot.classList.remove('active');
+            dot.classList.add('lost');
         }
     });
 }
