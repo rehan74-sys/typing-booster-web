@@ -6,7 +6,11 @@ const ASSETS_TO_CACHE = [
     './script.js',
     './manifest.json',
     './icon-192.png',
-    './icon-512.png'
+    './icon-512.png',
+    './fonts/Orbitron-Regular.ttf',
+    './fonts/Orbitron-Bold.ttf',
+    './fonts/RobotoMono-Regular.ttf',
+    './fonts/RobotoMono-Bold.ttf'
 ];
 
 // Install Event: Cache core assets
