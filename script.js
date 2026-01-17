@@ -16,7 +16,8 @@ let gameState = {
     maxUnlockedLevel: 1,
     startTime: 0,
     charactersTyped: 0,
-    wpm: 0
+    wpm: 0,
+    deferredPrompt: null // PWA Install Prompt
 };
 
 // DOM Elements
@@ -95,6 +96,34 @@ function setupEventListeners() {
     document.getElementById('home-btn').addEventListener('click', showStartScreen);
 
     window.addEventListener('keyup', handleInput);
+
+    // PWA Install Logic
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        gameState.deferredPrompt = e;
+        // Update UI notify the user they can install the PWA
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) {
+            installBtn.classList.remove('hidden');
+            installBtn.addEventListener('click', async () => {
+                if (gameState.deferredPrompt) {
+                    gameState.deferredPrompt.prompt();
+                    const { outcome } = await gameState.deferredPrompt.userChoice;
+                    console.log(`User response to the install prompt: ${outcome}`);
+                    gameState.deferredPrompt = null;
+                    installBtn.classList.add('hidden');
+                }
+            });
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        console.log('PWA was installed');
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) installBtn.classList.add('hidden');
+    });
 }
 
 function loadProgress() {
